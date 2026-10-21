@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <style>
-:root{--g:rgba(12,18,30,.72);--b:rgba(255,255,255,.14);--t:#eef3fb;--a:#ff7a1a;--a2:#2ee6a6}
+:root{--g:rgba(12,18,30,.78);--b:rgba(255,255,255,.14);--t:#eef3fb;--a:#ff7a1a;--a2:#2ee6a6}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--t);background:#06101c;overflow:hidden}
 #map{position:absolute;inset:0}
@@ -21,9 +21,21 @@ html,body{height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-s
 .clock .big{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--a2)}
 .clock .big span{font-size:13px;color:var(--t);opacity:.8;margin-left:6px}
 .clock .d{font-size:14px;margin-top:2px}.clock .g{font-size:11px;opacity:.6;margin-top:2px}
-#search{position:absolute;left:50%;transform:translateX(-50%);top:max(12px,env(safe-area-inset-top));z-index:5;width:min(360px,calc(100% - 600px));min-width:220px;display:flex;overflow:hidden}
-#search input{flex:1;background:none;border:0;color:var(--t);padding:12px 14px;font-size:15px;outline:none}
-#search button{background:var(--a);border:0;color:#fff;padding:0 16px;font-size:16px;cursor:pointer}
+
+/* Barbaacha + filannoo */
+#search{position:absolute;left:50%;transform:translateX(-50%);top:max(12px,env(safe-area-inset-top));z-index:6;width:min(380px,calc(100% - 600px));min-width:240px;border-radius:16px}
+#sbar{display:flex;overflow:hidden;border-radius:16px}
+#search input{flex:1;min-width:0;background:none;border:0;color:var(--t);padding:12px 14px;font-size:15px;outline:none}
+#search button#go{background:var(--a);border:0;color:#fff;padding:0 16px;font-size:16px;cursor:pointer}
+#sug{display:none;position:absolute;left:0;right:0;top:calc(100% + 8px);padding:6px;max-height:60vh;overflow:auto;border-radius:16px}
+#sug.show{display:block;animation:drop .25s ease both}
+#sug button{display:flex;width:100%;gap:10px;align-items:center;text-align:left;background:none;border:0;color:var(--t);padding:11px 10px;border-radius:10px;font-size:14px;cursor:pointer}
+#sug button:hover,#sug button.hl{background:rgba(255,255,255,.12)}
+#sug button .ic{font-size:20px;width:26px;text-align:center}
+#sug button small{display:block;opacity:.65;font-size:12px;margin-top:1px}
+#sug button.draw{background:linear-gradient(90deg,rgba(255,122,26,.3),rgba(255,210,63,.12));border:1px solid rgba(255,122,26,.5);margin-bottom:4px}
+#sug hr{border:0;border-top:1px solid var(--b);margin:4px 0}
+
 #panel{position:absolute;right:12px;top:max(12px,env(safe-area-inset-top));bottom:30px;width:310px;z-index:5;overflow:auto;padding:14px;animation:slide .9s ease both}
 #panel h3{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--a);margin:14px 0 8px}
 #panel h3:first-child{margin-top:0}
@@ -42,27 +54,32 @@ input[type=range]{width:100%;accent-color:var(--a)}
 #regs button{display:flex;align-items:center;gap:8px;text-align:left;background:rgba(255,255,255,.06);border:1px solid transparent;color:var(--t);padding:8px 10px;border-radius:9px;font-size:13px;cursor:pointer}
 #regs button:hover,#regs button.on{border-color:var(--a);background:rgba(255,122,26,.18)}
 #regs i{width:12px;height:12px;border-radius:4px;display:inline-block}
-#info{font-size:13px;margin-top:8px;opacity:.9;line-height:1.5}
+#info{font-size:13px;margin-top:8px;opacity:.95;line-height:1.5}
 #coord{position:absolute;left:12px;bottom:28px;z-index:5;padding:6px 12px;font-size:12px;font-variant-numeric:tabular-nums}
 #tog{display:none;position:absolute;right:12px;top:12px;z-index:7;padding:10px 14px;font-size:18px;border:1px solid var(--b);cursor:pointer;color:#fff}
+#toast{position:absolute;left:50%;bottom:90px;transform:translate(-50%,20px);z-index:8;padding:12px 18px;font-size:14px;text-align:center;opacity:0;pointer-events:none;transition:.4s;max-width:92%}
+#toast.show{opacity:1;transform:translate(-50%,0)}
 .mk{width:12px;height:12px;border-radius:50%;background:var(--a2);border:2px solid #fff;box-shadow:0 0 0 0 rgba(46,230,166,.7);animation:pulse 2s infinite;cursor:pointer}
 .mk.cap{background:var(--a);width:16px;height:16px}
 .rl{color:#fff;font-size:12px;font-weight:700;text-shadow:0 1px 4px #000,0 0 8px #000;pointer-events:none;white-space:nowrap}
 .maplibregl-popup-content{background:var(--g);color:var(--t);border-radius:12px;backdrop-filter:blur(10px);font-size:13px}
 .maplibregl-popup-tip{display:none}
-@keyframes drop{from{opacity:0;transform:translateY(-20px)}}
+@keyframes drop{from{opacity:0;transform:translateY(-14px)}}
 @keyframes slide{from{opacity:0;transform:translateX(40px)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes float{50%{transform:translateY(-6px)}}
 @keyframes pulse{70%{box-shadow:0 0 0 12px rgba(46,230,166,0)}100%{box-shadow:0 0 0 0 rgba(46,230,166,0)}}
 @media(max-width:900px){
  #search{left:12px;right:70px;transform:none;width:auto;top:auto;bottom:max(70px,calc(env(safe-area-inset-bottom) + 70px))}
- #left{width:auto;right:70px;flex-direction:row}.clock .g,.brand small{display:none}.clock .big{font-size:20px}.brand b{font-size:16px}
- #left{flex-wrap:wrap}.clock,.brand{padding:8px 12px}
+ #sug{top:auto;bottom:calc(100% + 8px);max-height:50vh}
+ #left{width:auto;right:70px;flex-direction:row;flex-wrap:wrap}
+ .clock .g,.brand small{display:none}.clock .big{font-size:20px}.brand b{font-size:16px}
+ .clock,.brand{padding:8px 12px}
  #tog{display:block}
  #panel{top:auto;left:12px;right:12px;width:auto;bottom:0;max-height:55%;border-radius:18px 18px 0 0;transform:translateY(110%);transition:transform .4s;animation:none}
  #panel.open{transform:none}
  #coord{display:none}
+ #toast{bottom:150px}
 }
 </style>
 </head>
@@ -77,9 +94,13 @@ input[type=range]{width:100%;accent-color:var(--a)}
  </div>
 </div>
 
-<div id="search" class="glass"><input id="q" placeholder="🔍 Iddoo barbaadi (fkn Adaama)..."><button id="go">→</button></div>
+<div id="search">
+ <div id="sug" class="glass"></div>
+ <div id="sbar" class="glass"><input id="q" autocomplete="off" placeholder="🔍 Barbaadi (fkn Oromia, Adaama)..."><button id="go">→</button></div>
+</div>
 <button id="tog" class="glass">☰</button>
 <div id="coord" class="glass">—</div>
+<div id="toast" class="glass"></div>
 
 <div id="panel" class="glass">
  <h3>🌦 Haala Qilleensaa</h3>
@@ -126,6 +147,8 @@ input[type=range]{width:100%;accent-color:var(--a)}
 <script>
 const $=s=>document.querySelector(s);
 const HOME={center:[39.6,8.9],zoom:5.2,pitch:55,bearing:-12};
+const isMobile=()=>innerWidth<=900;
+function toast(h,ms=4500){const t=$('#toast');t.innerHTML=h;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),ms)}
 
 /* ---------- Kaartaa ---------- */
 const raster=(t,a,ms=19)=>({type:'raster',tiles:t,tileSize:256,maxzoom:ms,attribution:a});
@@ -147,9 +170,11 @@ map.addControl(new maplibregl.ScaleControl({unit:'metric'}),'bottom-left');
 map.addControl(new maplibregl.FullscreenControl(),'bottom-left');
 
 map.on('load',()=>{
- map.setTerrain({source:'dem',exploration:1});map.setTerrain({source:'dem',exaggeration:1.8});
+ map.setTerrain({source:'dem',exaggeration:1.8});
  map.flyTo({...HOME,duration:5000,essential:true});
- loadRegions();addCities();
+ map.addSource('ms',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+ map.addLayer({id:'ml',type:'line',source:'ms',paint:{'line-color':'#2ee6a6','line-width':3,'line-dasharray':[2,1]}});
+ loadRegions();addCities();weather(38.75,9.0,'Finfinnee');
 });
 map.on('mousemove',e=>$('#coord').textContent=`${e.lngLat.lat.toFixed(4)}°N  ${e.lngLat.lng.toFixed(4)}°E`);
 
@@ -171,62 +196,104 @@ $('#tog').onclick=()=>$('#panel').classList.toggle('open');
 /* ---------- Naannoolee ---------- */
 const PAL=['#e6194b','#3cb44b','#4363d8','#f58231','#911eb4','#46f0f0','#f032e6','#bcf60c','#fabebe','#008080','#e6beff','#9a6324'];
 let regData=null,regMarkers=[];
-const OROMO=n=>/oromia/i.test(n);
+const OROMO=n=>/oromi/i.test(n);
 const bbox=g=>{let b=[180,90,-180,-90];(function w(c){typeof c[0]==='number'?(b=[Math.min(b[0],c[0]),Math.min(b[1],c[1]),Math.max(b[2],c[0]),Math.max(b[3],c[1])]):c.forEach(w)})(g.coordinates);return b};
+const polysOf=g=>g.type==='Polygon'?[g.coordinates]:g.coordinates;
+function areaKm2(g){ // bal'ina tilmaamaa
+ const R=6371,t=x=>x*Math.PI/180;let tot=0;
+ polysOf(g).forEach(p=>p.forEach((ring,i)=>{
+  let s=0;for(let k=0;k<ring.length-1;k++){const[a,b]=[ring[k],ring[k+1]];s+=t(b[0]-a[0])*(2+Math.sin(t(a[1]))+Math.sin(t(b[1])))}
+  const A=Math.abs(s)*R*R/2;tot+=i===0?A:-A}));
+ return tot}
+const regFeat=n=>regData&&regData.features.find(x=>x.properties.shapeName===n);
 
 async function loadRegions(){
  try{
   const j=await (await fetch('https://www.geoboundaries.org/api/current/gbOpen/ETH/ADM1/')).json();
   regData=await (await fetch(j.gjDownloadURL)).json();
  }catch(e){$('#regs').textContent='⚠ Daataan naannoo hin dhufne. Interneetii mirkaneessi.';return}
- regData.features.forEach((f,i)=>{f.properties.c=OROMO(f.properties.shapeName)?'#ff7a1a':PAL[i%PAL.length];f.properties.bb=bbox(f.geometry)});
+ const bbs={};
+ regData.features.forEach((f,i)=>{const n=f.properties.shapeName;f.properties.c=OROMO(n)?'#ff7a1a':PAL[i%PAL.length];bbs[n]=bbox(f.geometry)});
+ regData.bbs=bbs;
  map.addSource('reg',{type:'geojson',data:regData});
- map.addLayer({id:'reg-fill',type:'fill',source:'reg',paint:{'fill-color':['get','c'],'fill-opacity':['case',['==',['get','shapeName'],'Oromia'],.28,.14]}});
- map.addLayer({id:'reg-sel',type:'fill',source:'reg',filter:['==',['get','shapeName'],''],paint:{'fill-color':'#fff','fill-opacity':.28}});
+ map.addLayer({id:'reg-fill',type:'fill',source:'reg',paint:{'fill-color':['get','c'],'fill-opacity':['case',['in','Oromi',['get','shapeName']],.28,.14]}});
+ map.addLayer({id:'reg-sel',type:'fill',source:'reg',filter:['==',['get','shapeName'],''],paint:{'fill-color':'#fff','fill-opacity':.2}});
  map.addLayer({id:'reg-line',type:'line',source:'reg',paint:{'line-color':'#fff','line-width':1.2,'line-opacity':.8}});
- map.addLayer({id:'or-glow',type:'line',source:'reg',filter:['in','Oromia',['get','shapeName']],paint:{'line-color':'#ff7a1a','line-width':9,'line-blur':6,'line-opacity':.8}});
- map.addLayer({id:'or-line',type:'line',source:'reg',filter:['in','Oromia',['get','shapeName']],paint:{'line-color':'#ffd23f','line-width':2.6}});
+ map.addLayer({id:'or-glow',type:'line',source:'reg',filter:['in','Oromi',['get','shapeName']],paint:{'line-color':'#ff7a1a','line-width':9,'line-blur':6,'line-opacity':.8}});
+ map.addLayer({id:'or-line',type:'line',source:'reg',filter:['in','Oromi',['get','shapeName']],paint:{'line-color':'#ffd23f','line-width':2.6}});
+ /* Daangaa baasuuf (draw) layers */
+ map.addSource('dfill',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+ map.addSource('dline',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+ map.addLayer({id:'d-fill',type:'fill',source:'dfill',paint:{'fill-color':'#ff7a1a','fill-opacity':0}});
+ map.addLayer({id:'d-glow',type:'line',source:'dline',paint:{'line-color':'#ffd23f','line-width':12,'line-blur':8,'line-opacity':.75}});
+ map.addLayer({id:'d-line',type:'line',source:'dline',paint:{'line-color':'#ffffff','line-width':3.2}});
  let t=0;(function pulse(){t+=.04;if(map.getLayer('or-glow'))map.setPaintProperty('or-glow','line-opacity',.45+.35*Math.sin(t));requestAnimationFrame(pulse)})();
+
  const list=[...regData.features].sort((a,b)=>OROMO(b.properties.shapeName)-OROMO(a.properties.shapeName));
  $('#regs').innerHTML='';
  list.forEach(f=>{
   const p=f.properties,b=document.createElement('button');
   b.innerHTML=`<i style="background:${p.c}"></i>${OROMO(p.shapeName)?'⭐ ':''}${p.shapeName}`;
-  b.onclick=()=>selectReg(p.shapeName);b.dataset.n=p.shapeName;$('#regs').appendChild(b);
-  const bb=p.bb,el=document.createElement('div');el.className='rl';el.textContent=p.shapeName;
+  b.onclick=()=>{drawRegion(p.shapeName);if(isMobile())$('#panel').classList.remove('open')};
+  b.dataset.n=p.shapeName;$('#regs').appendChild(b);
+  const bb=bbs[p.shapeName],el=document.createElement('div');el.className='rl';el.textContent=p.shapeName;
   regMarkers.push(new maplibregl.Marker({element:el}).setLngLat([(bb[0]+bb[2])/2,(bb[1]+bb[3])/2]).addTo(map));
  });
- map.on('click','reg-fill',e=>{if(!measuring)selectReg(e.features[0].properties.shapeName)});
+ map.on('click','reg-fill',e=>{if(!measuring)drawRegion(e.features[0].properties.shapeName)});
  map.on('mouseenter','reg-fill',()=>map.getCanvas().style.cursor='pointer');
  map.on('mouseleave','reg-fill',()=>map.getCanvas().style.cursor='');
 }
-function selectReg(n){
- const f=regData.features.find(x=>x.properties.shapeName===n);if(!f)return;
- const bb=f.properties.bb;if(typeof bb==='string')f.properties.bb=JSON.parse(bb);
- const b=typeof bb==='string'?JSON.parse(bb):bb;
+
+/* Daangaa naannoo animeeshiniin kaartaa irratti baasi */
+let drawTok=0;
+function drawRegion(n){
+ const f=regFeat(n);if(!f)return toast('⚠ Daataan naannoo hin fe\'amne');
+ const tok=++drawTok,b=regData.bbs[n],col=f.properties.c;
  map.setFilter('reg-sel',['==',['get','shapeName'],n]);
  document.querySelectorAll('#regs button').forEach(x=>x.classList.toggle('on',x.dataset.n===n));
- map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:60,pitch:58,bearing:-15,duration:2800});
- $('#info').innerHTML=`<b>${n}</b>${OROMO(n)?' — Naannoo Oromiyaa ⭐':''}<br>Giddugala: ${((b[1]+b[3])/2).toFixed(2)}°N, ${((b[0]+b[2])/2).toFixed(2)}°E`;
+ map.getSource('dline').setData({type:'FeatureCollection',features:[]});
+ map.getSource('dfill').setData({type:'FeatureCollection',features:[]});
+ map.setPaintProperty('d-fill','fill-opacity',0);map.setPaintProperty('d-fill','fill-color',col);
+ map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:isMobile()?30:70,pitch:55,bearing:-12,duration:2200});
+ const rings=polysOf(f.geometry).flatMap(p=>p),total=rings.reduce((s,r)=>s+r.length,0),step=Math.max(2,Math.ceil(total/170));
+ const km=Math.round(areaKm2(f.geometry));
+ $('#info').innerHTML=`<b>${n}</b>${OROMO(n)?' — Naannoo Oromiyaa ⭐':''}<br>✏ Daangaa baafamaa jira...<br>Giddugala: ${((b[1]+b[3])/2).toFixed(2)}°N, ${((b[0]+b[2])/2).toFixed(2)}°E`;
+ toast(`✏ Daangaa <b>${n}</b> baasaa jira...`,3000);
  weather((b[0]+b[2])/2,(b[1]+b[3])/2,n);
+ let k=0;
+ setTimeout(function frame(){
+  if(tok!==drawTok)return;
+  k=Math.min(total,k+step);
+  let rem=k;const lines=[];
+  for(const r of rings){if(rem<=0)break;const s=r.slice(0,Math.min(r.length,rem));rem-=r.length;if(s.length>1)lines.push(s)}
+  map.getSource('dline').setData({type:'Feature',geometry:{type:'MultiLineString',coordinates:lines}});
+  if(k<total)return requestAnimationFrame(frame);
+  map.getSource('dfill').setData(f);
+  let o=0;(function fade(){if(tok!==drawTok)return;o+=.02;map.setPaintProperty('d-fill','fill-opacity',Math.min(o,.38));if(o<.38)requestAnimationFrame(fade)})();
+  $('#info').innerHTML=`<b>${n}</b>${OROMO(n)?' — Naannoo Oromiyaa ⭐':''}<br>✅ Daangaan baafameera<br>📐 Bal'ina ≈ <b>${km.toLocaleString()} km²</b><br>Giddugala: ${((b[1]+b[3])/2).toFixed(2)}°N, ${((b[0]+b[2])/2).toFixed(2)}°E`;
+  toast(`✅ Daangaan <b>${n}</b> baafameera<br>📐 Bal'ina ≈ ${km.toLocaleString()} km²`,6000);
+ },1400);
 }
-function clearSel(){if(map.getLayer('reg-sel'))map.setFilter('reg-sel',['==',['get','shapeName'],'']);document.querySelectorAll('#regs button').forEach(x=>x.classList.remove('on'));$('#info').innerHTML=''}
+function clearSel(){
+ drawTok++;
+ if(map.getLayer('reg-sel'))map.setFilter('reg-sel',['==',['get','shapeName'],'']);
+ if(map.getSource('dline')){map.getSource('dline').setData({type:'FeatureCollection',features:[]});map.getSource('dfill').setData({type:'FeatureCollection',features:[]})}
+ document.querySelectorAll('#regs button').forEach(x=>x.classList.remove('on'));$('#info').innerHTML=''}
 $('#treg').onchange=e=>{const v=e.target.checked?'visible':'none';['reg-fill','reg-sel','reg-line','or-glow','or-line'].forEach(l=>map.getLayer(l)&&map.setLayoutProperty(l,'visibility',v));regMarkers.forEach(m=>m.getElement().style.display=e.target.checked?'':'none')};
 
 /* ---------- Magaalota ---------- */
 const CITIES=[['Finfinnee',38.7578,9.0054,1],['Adaama',39.2695,8.54],['Jimmaa',36.8344,7.6773],['Bishooftuu',38.9784,8.7517],['Shaashamannee',38.5918,7.2064],['Naqamtee',36.5,9.0833],['Haramaayaa',42.0,9.4],['Ambo',37.85,8.9833],['Diredawa',41.8661,9.6009],['Hawaasa',38.4763,7.0621],['Baahir Daar',37.39,11.6],['Mekelle',39.4753,13.4967],['Jigjiga',42.7954,9.35],['Gondar',37.4667,12.6],['Sanqaallee Madda Walabu',39.9,6.1]];
 let cityMk=[];
+function goCity(c){map.flyTo({center:[c[1],c[2]],zoom:11,pitch:65,duration:3000});weather(c[1],c[2],c[0])}
 function addCities(){CITIES.forEach(c=>{
  const el=document.createElement('div');el.className='mk'+(c[3]?' cap':'');
  const m=new maplibregl.Marker({element:el}).setLngLat([c[1],c[2]]).setPopup(new maplibregl.Popup({offset:14}).setHTML(`<b>${c[0]}</b>`)).addTo(map);
- el.onclick=()=>{map.flyTo({center:[c[1],c[2]],zoom:11,pitch:65,duration:3000});weather(c[1],c[2],c[0])};
- cityMk.push(m)})}
+ el.onclick=()=>goCity(c);cityMk.push(m)})}
 $('#tcity').onchange=e=>cityMk.forEach(m=>m.getElement().style.display=e.target.checked?'':'none');
 
 /* ---------- Haala qilleensaa ---------- */
 const WC=c=>c===0?['☀️','Cabbii']:c<3?['⛅','Duumessa xiqqoo']:c===3?['☁️','Duumessa']:c<50?['🌫','Gamoo']:c<60?['🌦','Rooba xiqqaa']:c<70?['🌧','Rooba']:c<80?['❄️','Cabbii qabbanaa']:c<90?['🌧','Rooba cimaa']:['⛈','Aaduu'];
 const DY=['Wix','Kib','Rob','Kam','Jim','San','Dil'];
-let wtimer;
 async function weather(lng,lat,name='Iddoo filatame'){
  $('#wx').innerHTML='Eegi...';
  try{
@@ -237,8 +304,7 @@ async function weather(lng,lat,name='Iddoo filatame'){
   <div class="fc">${r.daily.time.slice(1).map((d,i)=>`<div>${DY[new Date(d).getDay()]}<br>${WC(r.daily.weather_code[i+1])[0]}<br>${Math.round(r.daily.temperature_2m_max[i+1])}°/${Math.round(r.daily.temperature_2m_min[i+1])}°</div>`).join('')}</div>`;
  }catch(e){$('#wx').textContent='⚠ Haala qilleensaa fe\'uun hin danda\'amne.'}
 }
-map.on('click',e=>{if(!measuring)weather(e.lngLat.lng,e.lngLat.lat,`${e.lngLat.lat.toFixed(2)}°N, ${e.lngLat.lng.toFixed(2)}°E`)});
-map.on('load',()=>weather(38.75,9.0,'Finfinnee'));
+map.on('click',e=>{if(!measuring&&!map.queryRenderedFeatures(e.point,{layers:map.getLayer('reg-fill')?['reg-fill']:[]}).length)weather(e.lngLat.lng,e.lngLat.lat,`${e.lngLat.lat.toFixed(2)}°N, ${e.lngLat.lng.toFixed(2)}°E`);hideSug()});
 
 /* ---------- Sa'aatii & Guyyaa Itiyoophiyaa ---------- */
 const EM=['Fuulbana','Onkololeessa','Sadaasa','Muddee','Amajjii','Guraandhala','Bitootessa','Ebla','Caamsaa','Waxabajjii','Adoolessa','Hagayya','Qaammee'];
@@ -257,25 +323,65 @@ function tick(){
 }
 tick();setInterval(tick,1000);
 
-/* ---------- Barbaacha ---------- */
-async function search(){
- const q=$('#q').value.trim();if(!q)return;
+/* ---------- Barbaacha + filannoo (suggestions) ---------- */
+const ALIAS={amaaraa:'amhara',amaara:'amhara',tigiraay:'tigray',tigray:'tigray',affar:'afar',somaalee:'somali',gaambeellaa:'gambela',gambeela:'gambela',beenishaangul:'benishangul',oromiyaa:'oromia',oromiya:'oromia'};
+const norm=s=>s.toLowerCase().replace(/regional state|region|state|city administration|administration/g,'').replace(/[^a-z]/g,'');
+let sugItems=[],hl=-1;
+function hideSug(){$('#sug').classList.remove('show');hl=-1}
+function buildSug(){
+ const q=$('#q').value.trim();if(!q){hideSug();return}
+ let nq=norm(q);nq=ALIAS[nq]||nq;items=[];
+ if(regData&&nq.length>=2){
+  regData.features.forEach(f=>{const n=f.properties.shapeName;
+   if(norm(n).includes(nq)||(nq.startsWith('oromi')&&OROMO(n)))items.push({t:'draw',n,ic:OROMO(n)?'⭐':'🗺',h:`<b>${n}</b> — daangaa kaartaa irratti baasi (Draw)<small>Daangaan naannoo kanaa animeeshiniin ni baafama</small>`})});
+ }
+ CITIES.filter(c=>norm(c[0]).includes(nq)&&nq.length>=2).forEach(c=>items.push({t:'city',c,ic:'📍',h:`<b>${c[0]}</b><small>Magaalaa — achi deemi</small>`}));
+ items.push({t:'geo',ic:'🔍',h:`<b>"${q}"</b> — addunyaa irratti barbaadi<small>OpenStreetMap</small>`});
+ sugItems=items;hl=0;renderSug();
+}
+let items=[];
+function renderSug(){
+ const box=$('#sug');box.innerHTML='';
+ sugItems.forEach((it,i)=>{
+  if(i>0&&sugItems[i-1].t==='draw'&&it.t!=='draw')box.appendChild(document.createElement('hr'));
+  const b=document.createElement('button');b.className=(it.t==='draw'?'draw ':'')+(i===hl?'hl':'');
+  b.innerHTML=`<span class="ic">${it.ic}</span><span>${it.h}</span>`;
+  b.onmousedown=e=>e.preventDefault();
+  b.onclick=()=>pick(it);box.appendChild(b)});
+ box.classList.add('show');
+}
+function pick(it){
+ hideSug();$('#q').blur();
+ if(it.t==='draw'){$('#q').value=it.n;drawRegion(it.n)}
+ else if(it.t==='city'){$('#q').value=it.c[0];goCity(it.c)}
+ else geoSearch($('#q').value.trim());
+}
+async function geoSearch(q){
+ if(!q)return;
  try{
   const r=await (await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`)).json();
-  if(!r[0])return alert('Iddoon hin argamne');
+  if(!r[0])return toast('⚠ Iddoon hin argamne');
   const lng=+r[0].lon,lat=+r[0].lat;
   new maplibregl.Popup().setLngLat([lng,lat]).setHTML(`<b>${r[0].display_name.split(',').slice(0,2).join(',')}</b>`).addTo(map);
   map.flyTo({center:[lng,lat],zoom:11,pitch:60,duration:3500});weather(lng,lat,r[0].display_name.split(',')[0]);
- }catch(e){alert('Barbaacha hin hojjenne')}
+ }catch(e){toast('⚠ Barbaacha hin hojjenne')}
 }
-$('#go').onclick=search;$('#q').onkeydown=e=>e.key==='Enter'&&search();
+$('#q').oninput=buildSug;
+$('#q').onfocus=buildSug;
+$('#q').onblur=()=>setTimeout(hideSug,150);
+$('#q').onkeydown=e=>{
+ if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!sugItems.length)return;hl=(hl+(e.key==='ArrowDown'?1:-1)+sugItems.length)%sugItems.length;renderSug()}
+ else if(e.key==='Enter'){e.preventDefault();sugItems.length?pick(sugItems[Math.max(hl,0)]):geoSearch($('#q').value.trim())}
+ else if(e.key==='Escape')hideSug();
+};
+$('#go').onclick=()=>{buildSug();if(sugItems.length)pick(sugItems[0])};
 
 /* ---------- Meeshaalee ---------- */
 $('#loc').onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{
  const c=[p.coords.longitude,p.coords.latitude];
  new maplibregl.Marker({color:'#2ee6a6'}).setLngLat(c).addTo(map);
  map.flyTo({center:c,zoom:13,pitch:60,duration:3000});weather(c[0],c[1],'Iddoo koo');
-},()=>alert('Hayyama iddoo kenni')):alert('Hin deeggaru');
+},()=>toast('⚠ Hayyama iddoo kenni')):toast('⚠ Hin deeggaru');
 
 let rotating=false,measuring=false,pts=[],mMk=[];
 $('#rot').onchange=e=>{rotating=e.target.checked;if(rotating)(function r(){if(!rotating)return;map.setBearing(map.getBearing()+.15);requestAnimationFrame(r)})()};
@@ -283,10 +389,6 @@ map.on('mousedown',()=>{rotating=false;$('#rot').checked=false});
 
 const hav=(a,b)=>{const R=6371,t=x=>x*Math.PI/180,dl=t(b[1]-a[1]),dn=t(b[0]-a[0]),x=Math.sin(dl/2)**2+Math.cos(t(a[1]))*Math.cos(t(b[1]))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
 $('#meas').onclick=()=>{measuring=!measuring;$('#meas').style.background=measuring?'var(--a)':'';$('#mres').textContent=measuring?'Kaartaa irratti tuqi — qaqqabsiisa.':'';map.getCanvas().style.cursor=measuring?'crosshair':''};
-map.on('load',()=>{
- map.addSource('ms',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
- map.addLayer({id:'ml',type:'line',source:'ms',paint:{'line-color':'#2ee6a6','line-width':3,'line-dasharray':[2,1]}});
-});
 map.on('click',e=>{
  if(!measuring)return;
  pts.push([e.lngLat.lng,e.lngLat.lat]);
@@ -295,7 +397,7 @@ map.on('click',e=>{
  let d=0;for(let i=1;i<pts.length;i++)d+=hav(pts[i-1],pts[i]);
  $('#mres').innerHTML=`📏 Fageenya: <b>${d.toFixed(2)} km</b> (${pts.length} tuqaa)`;
 });
-$('#reset').onclick=()=>{pts=[];mMk.forEach(m=>m.remove());mMk=[];map.getSource('ms').setData({type:'FeatureCollection',features:[]});$('#mres').textContent='';clearSel()};
+$('#reset').onclick=()=>{pts=[];mMk.forEach(m=>m.remove());mMk=[];map.getSource('ms').setData({type:'FeatureCollection',features:[]});$('#mres').textContent='';clearSel();$('#q').value=''};
 
 let touring=false;
 $('#tour').onclick=async()=>{
