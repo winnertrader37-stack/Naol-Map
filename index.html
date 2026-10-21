@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Naol Maping</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+:root{--g:rgba(12,18,30,.72);--b:rgba(255,255,255,.14);--t:#eef3fb;--a:#ff7a1a;--a2:#2ee6a6}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--t);background:#06101c;overflow:hidden}
+#map{position:absolute;inset:0}
+.glass{background:var(--g);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--b);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+#left{position:absolute;left:12px;top:max(12px,env(safe-area-inset-top));display:flex;flex-direction:column;gap:10px;z-index:5;width:250px}
+.brand{padding:12px 16px;display:flex;align-items:center;gap:10px;animation:drop .9s ease both}
+.logo{width:38px;height:38px;border-radius:12px;background:conic-gradient(from 200deg,var(--a),#ffd23f,var(--a2),var(--a));display:grid;place-items:center;font-size:20px;animation:spin 14s linear infinite}
+.brand b{font-size:20px;letter-spacing:.3px;background:linear-gradient(90deg,#fff,var(--a));-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand small{display:block;font-size:11px;opacity:.7}
+.clock{padding:12px 16px;animation:drop 1.1s ease both}
+.clock .big{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--a2)}
+.clock .big span{font-size:13px;color:var(--t);opacity:.8;margin-left:6px}
+.clock .d{font-size:14px;margin-top:2px}.clock .g{font-size:11px;opacity:.6;margin-top:2px}
+#search{position:absolute;left:50%;transform:translateX(-50%);top:max(12px,env(safe-area-inset-top));z-index:5;width:min(360px,calc(100% - 600px));min-width:220px;display:flex;overflow:hidden}
+#search input{flex:1;background:none;border:0;color:var(--t);padding:12px 14px;font-size:15px;outline:none}
+#search button{background:var(--a);border:0;color:#fff;padding:0 16px;font-size:16px;cursor:pointer}
+#panel{position:absolute;right:12px;top:max(12px,env(safe-area-inset-top));bottom:30px;width:310px;z-index:5;overflow:auto;padding:14px;animation:slide .9s ease both}
+#panel h3{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--a);margin:14px 0 8px}
+#panel h3:first-child{margin-top:0}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.chip,.btn{background:rgba(255,255,255,.08);border:1px solid var(--b);color:var(--t);padding:8px 11px;border-radius:10px;font-size:13px;cursor:pointer;transition:.2s}
+.chip:hover,.btn:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
+.chip.on{background:var(--a);border-color:var(--a);color:#fff}
+.sw{display:flex;align-items:center;justify-content:space-between;font-size:14px;padding:5px 0}
+.sw input[type=checkbox]{accent-color:var(--a);width:18px;height:18px}
+input[type=range]{width:100%;accent-color:var(--a)}
+#wx{background:linear-gradient(135deg,rgba(46,230,166,.18),rgba(255,122,26,.15));border:1px solid var(--b);border-radius:14px;padding:12px}
+#wx .t{font-size:34px;font-weight:700}#wx .e{font-size:38px;float:right;animation:float 3s ease-in-out infinite}
+#wx .s{font-size:12px;opacity:.8;line-height:1.6}
+.fc{display:flex;gap:6px;margin-top:8px}.fc div{flex:1;background:rgba(0,0,0,.25);border-radius:8px;padding:6px;text-align:center;font-size:11px}
+#regs{max-height:190px;overflow:auto;display:flex;flex-direction:column;gap:4px}
+#regs button{display:flex;align-items:center;gap:8px;text-align:left;background:rgba(255,255,255,.06);border:1px solid transparent;color:var(--t);padding:8px 10px;border-radius:9px;font-size:13px;cursor:pointer}
+#regs button:hover,#regs button.on{border-color:var(--a);background:rgba(255,122,26,.18)}
+#regs i{width:12px;height:12px;border-radius:4px;display:inline-block}
+#info{font-size:13px;margin-top:8px;opacity:.9;line-height:1.5}
+#coord{position:absolute;left:12px;bottom:28px;z-index:5;padding:6px 12px;font-size:12px;font-variant-numeric:tabular-nums}
+#tog{display:none;position:absolute;right:12px;top:12px;z-index:7;padding:10px 14px;font-size:18px;border:1px solid var(--b);cursor:pointer;color:#fff}
+.mk{width:12px;height:12px;border-radius:50%;background:var(--a2);border:2px solid #fff;box-shadow:0 0 0 0 rgba(46,230,166,.7);animation:pulse 2s infinite;cursor:pointer}
+.mk.cap{background:var(--a);width:16px;height:16px}
+.rl{color:#fff;font-size:12px;font-weight:700;text-shadow:0 1px 4px #000,0 0 8px #000;pointer-events:none;white-space:nowrap}
+.maplibregl-popup-content{background:var(--g);color:var(--t);border-radius:12px;backdrop-filter:blur(10px);font-size:13px}
+.maplibregl-popup-tip{display:none}
+@keyframes drop{from{opacity:0;transform:translateY(-20px)}}
+@keyframes slide{from{opacity:0;transform:translateX(40px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes float{50%{transform:translateY(-6px)}}
+@keyframes pulse{70%{box-shadow:0 0 0 12px rgba(46,230,166,0)}100%{box-shadow:0 0 0 0 rgba(46,230,166,0)}}
+@media(max-width:900px){
+ #search{left:12px;right:70px;transform:none;width:auto;top:auto;bottom:max(70px,calc(env(safe-area-inset-bottom) + 70px))}
+ #left{width:auto;right:70px;flex-direction:row}.clock .g,.brand small{display:none}.clock .big{font-size:20px}.brand b{font-size:16px}
+ #left{flex-wrap:wrap}.clock,.brand{padding:8px 12px}
+ #tog{display:block}
+ #panel{top:auto;left:12px;right:12px;width:auto;bottom:0;max-height:55%;border-radius:18px 18px 0 0;transform:translateY(110%);transition:transform .4s;animation:none}
+ #panel.open{transform:none}
+ #coord{display:none}
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<div id="left">
+ <div class="brand glass"><div class="logo">🌍</div><div><b>Naol Maping</b><small>Kaartaa 3D • Itiyoophiyaa</small></div></div>
+ <div class="clock glass">
+  <div class="big"><span id="eh" style="margin:0;font-size:inherit;color:inherit"></span><span id="ep"></span></div>
+  <div class="d" id="ed"></div><div class="g" id="gd"></div>
+ </div>
+</div>
+
+<div id="search" class="glass"><input id="q" placeholder="🔍 Iddoo barbaadi (fkn Adaama)..."><button id="go">→</button></div>
+<button id="tog" class="glass">☰</button>
+<div id="coord" class="glass">—</div>
+
+<div id="panel" class="glass">
+ <h3>🌦 Haala Qilleensaa</h3>
+ <div id="wx">Eegi...</div>
+
+ <h3>🗺 Gosa Kaartaa</h3>
+ <div class="row" id="bases">
+  <button class="chip on" data-b="sat">🛰 Satilaayitii</button>
+  <button class="chip" data-b="osm">🏙 Daandii</button>
+  <button class="chip" data-b="topo">⛰ Topo</button>
+  <button class="chip" data-b="dark">🌙 Dukkana</button>
+ </div>
+
+ <h3>🧊 3D & Animeeshiinii</h3>
+ <label class="sw">Dhaabbata 3D (gaara)<input type="checkbox" id="t3d" checked></label>
+ <label class="sw">Hillshade (gaaraa)<input type="checkbox" id="hill" checked></label>
+ <label class="sw">Naannoolee agarsiisi<input type="checkbox" id="treg" checked></label>
+ <label class="sw">Magaalota<input type="checkbox" id="tcity" checked></label>
+ <label class="sw">Naannessuu (rotate)<input type="checkbox" id="rot"></label>
+ <div style="font-size:12px;margin-top:6px">Ol-ka'iinsa gaaraa</div>
+ <input type="range" id="ex" min="0.5" max="4" step="0.1" value="1.8">
+ <div style="font-size:12px;margin-top:6px">Gara (pitch)</div>
+ <input type="range" id="pt" min="0" max="80" value="0">
+ <div class="row" style="margin-top:8px">
+  <button class="btn" id="zin">＋ Zoom In</button>
+  <button class="btn" id="zout">－ Zoom Out</button>
+  <button class="btn" id="home">🏠 Itiyoophiyaa</button>
+ </div>
+
+ <h3>🧭 Naannoolee Itiyoophiyaa</h3>
+ <div id="regs">Naannoolee fe'aa jira...</div>
+ <div id="info"></div>
+
+ <h3>🛠 Meeshaalee</h3>
+ <div class="row">
+  <button class="btn" id="loc">📍 Iddoo koo</button>
+  <button class="btn" id="meas">📏 Qaqqabsiisaa</button>
+  <button class="btn" id="tour">🚀 Daawwannaa</button>
+  <button class="btn" id="reset">♻ Haqi</button>
+ </div>
+ <div id="mres" style="font-size:13px;margin-top:8px"></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const HOME={center:[39.6,8.9],zoom:5.2,pitch:55,bearing:-12};
+
+/* ---------- Kaartaa ---------- */
+const raster=(t,a,ms=19)=>({type:'raster',tiles:t,tileSize:256,maxzoom:ms,attribution:a});
+const dem={type:'raster-dem',tiles:['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],encoding:'terrarium',tileSize:256,maxzoom:14,attribution:'Terrain: Mapzen/AWS'};
+const map=new maplibregl.Map({
+ container:'map',center:[39.6,8.9],zoom:2.5,pitch:0,maxPitch:85,
+ style:{version:8,sources:{
+  sat:raster(['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],'Esri World Imagery'),
+  osm:raster(['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],'© OpenStreetMap'),
+  topo:raster(['https://a.tile.opentopomap.org/{z}/{x}/{y}.png'],'© OpenTopoMap',17),
+  dark:raster(['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'],'© CARTO'),
+  dem,hs:dem},
+  layers:[{id:'bg',type:'background',paint:{'background-color':'#06101c'}},
+   ...['sat','osm','topo','dark'].map(k=>({id:k,type:'raster',source:k,layout:{visibility:k==='sat'?'visible':'none'}})),
+   {id:'hill',type:'hillshade',source:'hs',paint:{'hillshade-exaggeration':.45,'hillshade-shadow-color':'#000'}}]}
+});
+map.addControl(new maplibregl.NavigationControl({visualizePitch:true,showCompass:true}),'bottom-left');
+map.addControl(new maplibregl.ScaleControl({unit:'metric'}),'bottom-left');
+map.addControl(new maplibregl.FullscreenControl(),'bottom-left');
+
+map.on('load',()=>{
+ map.setTerrain({source:'dem',exploration:1});map.setTerrain({source:'dem',exaggeration:1.8});
+ map.flyTo({...HOME,duration:5000,essential:true});
+ loadRegions();addCities();
+});
+map.on('mousemove',e=>$('#coord').textContent=`${e.lngLat.lat.toFixed(4)}°N  ${e.lngLat.lng.toFixed(4)}°E`);
+
+/* ---------- Gosa kaartaa ---------- */
+document.querySelectorAll('#bases .chip').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('#bases .chip').forEach(x=>x.classList.toggle('on',x===b));
+ ['sat','osm','topo','dark'].forEach(k=>map.setLayoutProperty(k,'visibility',k===b.dataset.b?'visible':'none'));
+});
+$('#t3d').onchange=e=>map.setTerrain(e.target.checked?{source:'dem',exaggeration:+$('#ex').value}:null);
+$('#ex').oninput=e=>$('#t3d').checked&&map.setTerrain({source:'dem',exaggeration:+e.target.value});
+$('#hill').onchange=e=>map.setLayoutProperty('hill','visibility',e.target.checked?'visible':'none');
+$('#pt').oninput=e=>map.setPitch(+e.target.value);
+map.on('pitch',()=>$('#pt').value=Math.round(map.getPitch()));
+$('#zin').onclick=()=>map.zoomIn({duration:600});
+$('#zout').onclick=()=>map.zoomOut({duration:600});
+$('#home').onclick=()=>{clearSel();map.flyTo({...HOME,duration:3000})};
+$('#tog').onclick=()=>$('#panel').classList.toggle('open');
+
+/* ---------- Naannoolee ---------- */
+const PAL=['#e6194b','#3cb44b','#4363d8','#f58231','#911eb4','#46f0f0','#f032e6','#bcf60c','#fabebe','#008080','#e6beff','#9a6324'];
+let regData=null,regMarkers=[];
+const OROMO=n=>/oromia/i.test(n);
+const bbox=g=>{let b=[180,90,-180,-90];(function w(c){typeof c[0]==='number'?(b=[Math.min(b[0],c[0]),Math.min(b[1],c[1]),Math.max(b[2],c[0]),Math.max(b[3],c[1])]):c.forEach(w)})(g.coordinates);return b};
+
+async function loadRegions(){
+ try{
+  const j=await (await fetch('https://www.geoboundaries.org/api/current/gbOpen/ETH/ADM1/')).json();
+  regData=await (await fetch(j.gjDownloadURL)).json();
+ }catch(e){$('#regs').textContent='⚠ Daataan naannoo hin dhufne. Interneetii mirkaneessi.';return}
+ regData.features.forEach((f,i)=>{f.properties.c=OROMO(f.properties.shapeName)?'#ff7a1a':PAL[i%PAL.length];f.properties.bb=bbox(f.geometry)});
+ map.addSource('reg',{type:'geojson',data:regData});
+ map.addLayer({id:'reg-fill',type:'fill',source:'reg',paint:{'fill-color':['get','c'],'fill-opacity':['case',['==',['get','shapeName'],'Oromia'],.28,.14]}});
+ map.addLayer({id:'reg-sel',type:'fill',source:'reg',filter:['==',['get','shapeName'],''],paint:{'fill-color':'#fff','fill-opacity':.28}});
+ map.addLayer({id:'reg-line',type:'line',source:'reg',paint:{'line-color':'#fff','line-width':1.2,'line-opacity':.8}});
+ map.addLayer({id:'or-glow',type:'line',source:'reg',filter:['in','Oromia',['get','shapeName']],paint:{'line-color':'#ff7a1a','line-width':9,'line-blur':6,'line-opacity':.8}});
+ map.addLayer({id:'or-line',type:'line',source:'reg',filter:['in','Oromia',['get','shapeName']],paint:{'line-color':'#ffd23f','line-width':2.6}});
+ let t=0;(function pulse(){t+=.04;if(map.getLayer('or-glow'))map.setPaintProperty('or-glow','line-opacity',.45+.35*Math.sin(t));requestAnimationFrame(pulse)})();
+ const list=[...regData.features].sort((a,b)=>OROMO(b.properties.shapeName)-OROMO(a.properties.shapeName));
+ $('#regs').innerHTML='';
+ list.forEach(f=>{
+  const p=f.properties,b=document.createElement('button');
+  b.innerHTML=`<i style="background:${p.c}"></i>${OROMO(p.shapeName)?'⭐ ':''}${p.shapeName}`;
+  b.onclick=()=>selectReg(p.shapeName);b.dataset.n=p.shapeName;$('#regs').appendChild(b);
+  const bb=p.bb,el=document.createElement('div');el.className='rl';el.textContent=p.shapeName;
+  regMarkers.push(new maplibregl.Marker({element:el}).setLngLat([(bb[0]+bb[2])/2,(bb[1]+bb[3])/2]).addTo(map));
+ });
+ map.on('click','reg-fill',e=>{if(!measuring)selectReg(e.features[0].properties.shapeName)});
+ map.on('mouseenter','reg-fill',()=>map.getCanvas().style.cursor='pointer');
+ map.on('mouseleave','reg-fill',()=>map.getCanvas().style.cursor='');
+}
+function selectReg(n){
+ const f=regData.features.find(x=>x.properties.shapeName===n);if(!f)return;
+ const bb=f.properties.bb;if(typeof bb==='string')f.properties.bb=JSON.parse(bb);
+ const b=typeof bb==='string'?JSON.parse(bb):bb;
+ map.setFilter('reg-sel',['==',['get','shapeName'],n]);
+ document.querySelectorAll('#regs button').forEach(x=>x.classList.toggle('on',x.dataset.n===n));
+ map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:60,pitch:58,bearing:-15,duration:2800});
+ $('#info').innerHTML=`<b>${n}</b>${OROMO(n)?' — Naannoo Oromiyaa ⭐':''}<br>Giddugala: ${((b[1]+b[3])/2).toFixed(2)}°N, ${((b[0]+b[2])/2).toFixed(2)}°E`;
+ weather((b[0]+b[2])/2,(b[1]+b[3])/2,n);
+}
+function clearSel(){if(map.getLayer('reg-sel'))map.setFilter('reg-sel',['==',['get','shapeName'],'']);document.querySelectorAll('#regs button').forEach(x=>x.classList.remove('on'));$('#info').innerHTML=''}
+$('#treg').onchange=e=>{const v=e.target.checked?'visible':'none';['reg-fill','reg-sel','reg-line','or-glow','or-line'].forEach(l=>map.getLayer(l)&&map.setLayoutProperty(l,'visibility',v));regMarkers.forEach(m=>m.getElement().style.display=e.target.checked?'':'none')};
+
+/* ---------- Magaalota ---------- */
+const CITIES=[['Finfinnee',38.7578,9.0054,1],['Adaama',39.2695,8.54],['Jimmaa',36.8344,7.6773],['Bishooftuu',38.9784,8.7517],['Shaashamannee',38.5918,7.2064],['Naqamtee',36.5,9.0833],['Haramaayaa',42.0,9.4],['Ambo',37.85,8.9833],['Diredawa',41.8661,9.6009],['Hawaasa',38.4763,7.0621],['Baahir Daar',37.39,11.6],['Mekelle',39.4753,13.4967],['Jigjiga',42.7954,9.35],['Gondar',37.4667,12.6],['Sanqaallee Madda Walabu',39.9,6.1]];
+let cityMk=[];
+function addCities(){CITIES.forEach(c=>{
+ const el=document.createElement('div');el.className='mk'+(c[3]?' cap':'');
+ const m=new maplibregl.Marker({element:el}).setLngLat([c[1],c[2]]).setPopup(new maplibregl.Popup({offset:14}).setHTML(`<b>${c[0]}</b>`)).addTo(map);
+ el.onclick=()=>{map.flyTo({center:[c[1],c[2]],zoom:11,pitch:65,duration:3000});weather(c[1],c[2],c[0])};
+ cityMk.push(m)})}
+$('#tcity').onchange=e=>cityMk.forEach(m=>m.getElement().style.display=e.target.checked?'':'none');
+
+/* ---------- Haala qilleensaa ---------- */
+const WC=c=>c===0?['☀️','Cabbii']:c<3?['⛅','Duumessa xiqqoo']:c===3?['☁️','Duumessa']:c<50?['🌫','Gamoo']:c<60?['🌦','Rooba xiqqaa']:c<70?['🌧','Rooba']:c<80?['❄️','Cabbii qabbanaa']:c<90?['🌧','Rooba cimaa']:['⛈','Aaduu'];
+const DY=['Wix','Kib','Rob','Kam','Jim','San','Dil'];
+let wtimer;
+async function weather(lng,lat,name='Iddoo filatame'){
+ $('#wx').innerHTML='Eegi...';
+ try{
+  const r=await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=4&timezone=auto`)).json();
+  const c=r.current,[e,w]=WC(c.weather_code);
+  $('#wx').innerHTML=`<span class="e">${e}</span><div class="s"><b>${name}</b></div><div class="t">${Math.round(c.temperature_2m)}°C</div>
+  <div class="s">${w} • Of-fakkeessu ${Math.round(c.apparent_temperature)}°<br>💧 Danfaa ${c.relative_humidity_2m}% • 💨 ${c.wind_speed_10m} km/s • ☔ ${c.precipitation} mm</div>
+  <div class="fc">${r.daily.time.slice(1).map((d,i)=>`<div>${DY[new Date(d).getDay()]}<br>${WC(r.daily.weather_code[i+1])[0]}<br>${Math.round(r.daily.temperature_2m_max[i+1])}°/${Math.round(r.daily.temperature_2m_min[i+1])}°</div>`).join('')}</div>`;
+ }catch(e){$('#wx').textContent='⚠ Haala qilleensaa fe\'uun hin danda\'amne.'}
+}
+map.on('click',e=>{if(!measuring)weather(e.lngLat.lng,e.lngLat.lat,`${e.lngLat.lat.toFixed(2)}°N, ${e.lngLat.lng.toFixed(2)}°E`)});
+map.on('load',()=>weather(38.75,9.0,'Finfinnee'));
+
+/* ---------- Sa'aatii & Guyyaa Itiyoophiyaa ---------- */
+const EM=['Fuulbana','Onkololeessa','Sadaasa','Muddee','Amajjii','Guraandhala','Bitootessa','Ebla','Caamsaa','Waxabajjii','Adoolessa','Hagayya','Qaammee'];
+const GD=['Dilbata','Wiixata','Kibxata','Roobii','Kamisa','Jimaata','Sanbata'];
+const GM=['Amajjii','Guraandhala','Bitootessa','Eblaa','Caamsaa','Waxabajjii','Adooleessa','Hagayya','Fuulbana','Onkololeessa','Sadaasa','Muddee'];
+function jdn(y,m,d){const a=Math.floor((14-m)/12),yy=y+4800-a,mm=m+12*a-3;return d+Math.floor((153*mm+2)/5)+365*yy+Math.floor(yy/4)-Math.floor(yy/100)+Math.floor(yy/400)-32045}
+function ethDate(dt){
+ const j=jdn(dt.getFullYear(),dt.getMonth()+1,dt.getDate()),r=(j-1723856)%1461,n=r%365+365*Math.floor(r/1460);
+ return{y:4*Math.floor((j-1723856)/1461)+Math.floor(r/365)-Math.floor(r/1460),m:Math.floor(n/30),d:n%30+1}}
+function tick(){
+ const n=new Date(),h=n.getHours(),eh=((h+6)%12)||12,p=n.getMinutes(),s=n.getSeconds(),z=x=>String(x).padStart(2,'0');
+ const e=ethDate(n),per=h>=6&&h<12?'ganama':h>=12&&h<18?'guyyaa':h>=18&&h<22?'galgala':'halkan';
+ $('#eh').textContent=`${eh}:${z(p)}:${z(s)}`;$('#ep').textContent=per;
+ $('#ed').textContent=`${GD[n.getDay()]}, ${e.d} ${EM[e.m]} ${e.y} E.C`;
+ $('#gd').textContent=`${n.getDate()} ${GM[n.getMonth()]} ${n.getFullYear()} G.C • ${z(h)}:${z(p)}`;
+}
+tick();setInterval(tick,1000);
+
+/* ---------- Barbaacha ---------- */
+async function search(){
+ const q=$('#q').value.trim();if(!q)return;
+ try{
+  const r=await (await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`)).json();
+  if(!r[0])return alert('Iddoon hin argamne');
+  const lng=+r[0].lon,lat=+r[0].lat;
+  new maplibregl.Popup().setLngLat([lng,lat]).setHTML(`<b>${r[0].display_name.split(',').slice(0,2).join(',')}</b>`).addTo(map);
+  map.flyTo({center:[lng,lat],zoom:11,pitch:60,duration:3500});weather(lng,lat,r[0].display_name.split(',')[0]);
+ }catch(e){alert('Barbaacha hin hojjenne')}
+}
+$('#go').onclick=search;$('#q').onkeydown=e=>e.key==='Enter'&&search();
+
+/* ---------- Meeshaalee ---------- */
+$('#loc').onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{
+ const c=[p.coords.longitude,p.coords.latitude];
+ new maplibregl.Marker({color:'#2ee6a6'}).setLngLat(c).addTo(map);
+ map.flyTo({center:c,zoom:13,pitch:60,duration:3000});weather(c[0],c[1],'Iddoo koo');
+},()=>alert('Hayyama iddoo kenni')):alert('Hin deeggaru');
+
+let rotating=false,measuring=false,pts=[],mMk=[];
+$('#rot').onchange=e=>{rotating=e.target.checked;if(rotating)(function r(){if(!rotating)return;map.setBearing(map.getBearing()+.15);requestAnimationFrame(r)})()};
+map.on('mousedown',()=>{rotating=false;$('#rot').checked=false});
+
+const hav=(a,b)=>{const R=6371,t=x=>x*Math.PI/180,dl=t(b[1]-a[1]),dn=t(b[0]-a[0]),x=Math.sin(dl/2)**2+Math.cos(t(a[1]))*Math.cos(t(b[1]))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
+$('#meas').onclick=()=>{measuring=!measuring;$('#meas').style.background=measuring?'var(--a)':'';$('#mres').textContent=measuring?'Kaartaa irratti tuqi — qaqqabsiisa.':'';map.getCanvas().style.cursor=measuring?'crosshair':''};
+map.on('load',()=>{
+ map.addSource('ms',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+ map.addLayer({id:'ml',type:'line',source:'ms',paint:{'line-color':'#2ee6a6','line-width':3,'line-dasharray':[2,1]}});
+});
+map.on('click',e=>{
+ if(!measuring)return;
+ pts.push([e.lngLat.lng,e.lngLat.lat]);
+ mMk.push(new maplibregl.Marker({color:'#2ee6a6',scale:.6}).setLngLat(pts.at(-1)).addTo(map));
+ map.getSource('ms').setData({type:'Feature',geometry:{type:'LineString',coordinates:pts}});
+ let d=0;for(let i=1;i<pts.length;i++)d+=hav(pts[i-1],pts[i]);
+ $('#mres').innerHTML=`📏 Fageenya: <b>${d.toFixed(2)} km</b> (${pts.length} tuqaa)`;
+});
+$('#reset').onclick=()=>{pts=[];mMk.forEach(m=>m.remove());mMk=[];map.getSource('ms').setData({type:'FeatureCollection',features:[]});$('#mres').textContent='';clearSel()};
+
+let touring=false;
+$('#tour').onclick=async()=>{
+ if(touring){touring=false;$('#tour').textContent='🚀 Daawwannaa';return}
+ touring=true;$('#tour').textContent='⏹ Dhaabi';
+ for(const c of CITIES){
+  if(!touring)break;
+  map.flyTo({center:[c[1],c[2]],zoom:10.5,pitch:65,bearing:Math.random()*120-60,duration:4000});
+  weather(c[1],c[2],c[0]);
+  await new Promise(r=>setTimeout(r,6500));
+ }
+ touring=false;$('#tour').textContent='🚀 Daawwannaa';map.flyTo({...HOME,duration:3500});
+};
+</script>
+</body>
+</html>
