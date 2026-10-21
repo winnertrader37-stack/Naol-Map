@@ -108,11 +108,18 @@ input[type=range]{width:100%;accent-color:var(--a)}
 
  <h3>🗺 Gosa Kaartaa</h3>
  <div class="row" id="bases">
-  <button class="chip on" data-b="sat">🛰 Satilaayitii</button>
+  <button class="chip on" data-b="sat">🛰 Satilaayitii (bal'aa)</button>
+  <button class="chip" data-b="live">📡 Har'a (NASA)</button>
+  <button class="chip" data-b="s2">🌱 Sentinel-2 (haaraa)</button>
   <button class="chip" data-b="osm">🏙 Daandii</button>
   <button class="chip" data-b="topo">⛰ Topo</button>
   <button class="chip" data-b="dark">🌙 Dukkana</button>
  </div>
+
+ <div id="lctl" style="display:none;margin-top:8px;font-size:13px">📅 Guyyaa suuraa satilaayitii:
+  <input type="date" id="ld" style="width:100%;margin-top:4px;padding:8px;border-radius:9px;background:rgba(255,255,255,.1);border:1px solid var(--b);color:var(--t)"></div>
+ <div id="sctl" style="display:none;margin-top:8px;font-size:13px">🗓 Waggaa suuraa:
+  <select id="sy" style="width:100%;margin-top:4px;padding:8px;border-radius:9px;background:#18202f;border:1px solid var(--b);color:var(--t)"><option>2024</option><option>2023</option><option>2022</option><option>2021</option></select></div>
 
  <h3>🧊 3D & Animeeshiinii</h3>
  <label class="sw">Dhaabbata 3D (gaara)<input type="checkbox" id="t3d" checked></label>
@@ -153,6 +160,9 @@ function toast(h,ms=4500){const t=$('#toast');t.innerHTML=h;t.classList.add('sho
 /* ---------- Kaartaa ---------- */
 const raster=(t,a,ms=19)=>({type:'raster',tiles:t,tileSize:256,maxzoom:ms,attribution:a});
 const dem={type:'raster-dem',tiles:['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],encoding:'terrarium',tileSize:256,maxzoom:14,attribution:'Terrain: Mapzen/AWS'};
+const YD=new Date(Date.now()-864e5).toISOString().slice(0,10);
+const gibs=d=>`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/${d}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`;
+const s2url=y=>`https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-${y}_3857/default/g/{z}/{y}/{x}.jpg`;
 const map=new maplibregl.Map({
  container:'map',center:[39.6,8.9],zoom:2.5,pitch:0,maxPitch:85,
  style:{version:8,sources:{
@@ -160,9 +170,11 @@ const map=new maplibregl.Map({
   osm:raster(['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],'© OpenStreetMap'),
   topo:raster(['https://a.tile.opentopomap.org/{z}/{x}/{y}.png'],'© OpenTopoMap',17),
   dark:raster(['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'],'© CARTO'),
+  live:raster([gibs(YD)],'NASA GIBS / VIIRS (daily)',9),
+  s2:raster([s2url(2024)],'Sentinel-2 cloudless by EOX (Copernicus data)',17),
   dem,hs:dem},
   layers:[{id:'bg',type:'background',paint:{'background-color':'#06101c'}},
-   ...['sat','osm','topo','dark'].map(k=>({id:k,type:'raster',source:k,layout:{visibility:k==='sat'?'visible':'none'}})),
+   ...['sat','s2','live','osm','topo','dark'].map(k=>({id:k,type:'raster',source:k,layout:{visibility:k==='sat'?'visible':'none'}})),
    {id:'hill',type:'hillshade',source:'hs',paint:{'hillshade-exaggeration':.45,'hillshade-shadow-color':'#000'}}]}
 });
 map.addControl(new maplibregl.NavigationControl({visualizePitch:true,showCompass:true}),'bottom-left');
@@ -181,8 +193,15 @@ map.on('mousemove',e=>$('#coord').textContent=`${e.lngLat.lat.toFixed(4)}°N  ${
 /* ---------- Gosa kaartaa ---------- */
 document.querySelectorAll('#bases .chip').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('#bases .chip').forEach(x=>x.classList.toggle('on',x===b));
- ['sat','osm','topo','dark'].forEach(k=>map.setLayoutProperty(k,'visibility',k===b.dataset.b?'visible':'none'));
+ ['sat','s2','live','osm','topo','dark'].forEach(k=>map.setLayoutProperty(k,'visibility',k===b.dataset.b?'visible':'none'));
+ $('#lctl').style.display=b.dataset.b==='live'?'block':'none';
+ $('#sctl').style.display=b.dataset.b==='s2'?'block':'none';
+ if(b.dataset.b==='live')toast('📡 Suuraa NASA <b>guyyaa guyyaan</b> haaromu (~375m). Guyyaa filachuu dandeessa.',6000);
+ if(b.dataset.b==='s2')toast('🌱 Sentinel-2: suuraa <b>haaraa</b> (10m), duumessa malee.',6000);
 });
+$('#ld').value=YD;$('#ld').max=new Date().toISOString().slice(0,10);
+$('#ld').onchange=e=>e.target.value&&map.getSource('live').setTiles([gibs(e.target.value)]);
+$('#sy').onchange=e=>map.getSource('s2').setTiles([s2url(e.target.value)]);
 $('#t3d').onchange=e=>map.setTerrain(e.target.checked?{source:'dem',exaggeration:+$('#ex').value}:null);
 $('#ex').oninput=e=>$('#t3d').checked&&map.setTerrain({source:'dem',exaggeration:+e.target.value});
 $('#hill').onchange=e=>map.setLayoutProperty('hill','visibility',e.target.checked?'visible':'none');
